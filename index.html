@@ -31,14 +31,19 @@
             left: 10px;
             top: 40px;
         }
+        #go {
+            position: absolute;
+            left: 6px;
+            top: 65px;
+        }
     </style>
 </head>
 
 <body>
     <canvas></canvas>
-    <input type='number' id='k' value='5' onchange='init'>
-    <input type='number' id='n' value='8' onchange="init">
-
+    <input type='number' id='k' value='5'>
+    <input type='number' id='n' value='8'>
+    <input type='checkbox' id='go'>
 </body>
 <script>
     let canvas = document.querySelector('canvas');
@@ -46,57 +51,86 @@
     let k = parseInt(k_Input.value);
     let n_Input = document.getElementById('n');
     let n = parseInt(n_Input.value);
+    let go_Input = document.getElementById('go');
+    let go = true;
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
-    let pointsArr_X = [];
-    let pointsArr_Y = [];
+    let pointsArr = [];
 
     let ctx = canvas.getContext('2d');
     let pointSize = 2;
 
-    window.addEventListener('resize', function() {
+    window.addEventListener('resize', function () {
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
         init();
     });
-    k_Input.onchange = function() {
+    k_Input.onchange = function () {
         init();
     }
-    n_Input.onchange = function() {
+    n_Input.onchange = function () {
+        init();
+    }
+    go_Input.onchange = function () {
         init();
     }
 
     function init() {
-        pointsArr_X = [];
-        pointsArr_Y = [];
-        k_Input = document.getElementById('k');
-        n_Input = document.getElementById('n');
+        pointsArr = [];
         k = parseInt(k_Input.value);
         n = parseInt(n_Input.value);
+        go = go_Input.checked;
+        // console.log(`%c${go}`, `color: yellow`);
         let bigger = k < n ? n : k;
-        ctx.clearRect(0,0, canvas.width, canvas.height);
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.translate(canvas.width / 2, canvas.height / 2);
         let bigRadius = canvas.height < canvas.width ? canvas.height / 2 - 10 : canvas.width / 2 - 10;
-        for(let a = 0; a < Math.PI * 2 * bigger * 2; a += .01) {
+        let ending = Math.PI * 2 * bigger * 2;
+        for (let a = 0; a < ending; a += .01) {
             let r = bigRadius * Math.cos(k / n * a);
-            let x = r * Math.cos(a);
-            let y = r * Math.sin(a);
-            pointsArr_X.push(x);
-            pointsArr_Y.push(y);
-            // ctx.fillStyle = '#FFF';
-            // ctx.fillRect(x, y, pointSize, pointSize);
+            let new_x = r * Math.cos(a);
+            let new_y = r * Math.sin(a);
+            let hue = interpolate(a, 0, ending, 0, 355)
+            let new_c = getHSL(hue, 100, 50);
+            let p = {
+                x: new_x,
+                y: new_y,
+                color: new_c
+            };
+            pointsArr.push(p);
+            if (!go) {
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(new_x, new_y, pointSize, pointSize);
+            }
         }
         ctx.translate(-canvas.width / 2, -canvas.height / 2);
-        animate();
+        if (go) {
+            animate();
+        }
+    }
+
+    function getHSL(h, s, l) {
+        return 'hsl(' + h + ',' + s + '%,' + l + '%)';
+    }
+
+    function interpolate(value, min1, max1, min2, max2) {
+        return min2 + (max2 - min2) * ((value - min1) / (max1 - min1));
     }
 
     function animate() {
+        // console.log(`%c${go}`, `color: red`);
         requestAnimationFrame(animate);
-        ctx.fillStyle = '#fff';
-        ctx.fillRect(pointsArr_X.pop() + canvas.width / 2, pointsArr_Y.pop() + canvas.height / 2, pointSize, pointSize);
+        for (let i = 0; i < 20; i++) {
+            let p = pointsArr.pop();
+            ctx.fillStyle = p.color;
+            ctx.fillRect(p.x + canvas.width / 2, p.y + canvas.height / 2, pointSize,
+                pointSize);
+        }
     }
+
     init();
-    animate();
+    if (go)
+        animate();
 </script>
 
 </html>
